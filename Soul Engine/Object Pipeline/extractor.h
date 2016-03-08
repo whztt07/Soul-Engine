@@ -6,6 +6,7 @@
 
 void ExtractFromFile(const char* name, 
 	std::vector<tinyobj::shape_t> & shapes){
+	
 	//std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string err = tinyobj::LoadObj(shapes, materials, name, NULL);
