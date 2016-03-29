@@ -9,6 +9,11 @@ Let k=n/3
 
 k-cluster the high-detail mesh at this point (with groups of size 3, except for fact that n%3 may not be 0)
 	//Ignore ==> use Kruskal`s algorithm and stop when there are k/3 components
+	//Found some ideas of how to achieve this at: 
+	//http://stackoverflow.com/questions/5452576/k-means-algorithm-variation-with-equal-cluster-size
+	//and
+	//http://stackoverflow.com/questions/8796682/group-n-points-in-k-clusters-of-equal-size
+	//Will be looking into further
 
 handle possibility of n%3 != 0
 	if n%3==1
