@@ -1,0 +1,31 @@
+Algorithm: void tesselate(const char * fName, float detail)
+
+Extract Obj from file		//ExtractFromFile(fName) 
+
+Let n be the number of points in the high-detail mesh
+
+Let k=n/3
+
+
+k-cluster the high-detail mesh at this point (with groups of size 3, except for fact that n%3 may not be 0)
+	//Ignore ==> use Kruskal`s algorithm and stop when there are k/3 components
+
+handle possibility of n%3 != 0
+	if n%3==1
+		find group of 4
+		pick an arbitrary point and run 2-nearest neighbors
+		take other point and create a triangle with its 2 nearest neighbors
+		make a triangle from these points
+
+	else if n%3==2
+		if 2 groups of 4 points
+			run the code for "n%3==1" on each group of 4
+		else //there is a group of five
+			find the group of 5
+			pick an arbitrary point and run 2-nearest neighbors
+			find nearest neighbor of the midpoint of the two points that weren't nearest neighbors
+			create a triangle from these points 
+
+Use these triangles for low detail mesh
+
+Handle subdivision for cases violating detail parameter	
