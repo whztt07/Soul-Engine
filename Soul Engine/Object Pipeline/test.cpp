@@ -3,6 +3,8 @@
 #include <gtx/rotate_vector.hpp>
 #include "../Include Files/Metrics.h"
 #include "extractor.h"
+#include <unordered_set>
+#include <list>
 
 #include <cassert>
 #include <fstream>
@@ -20,9 +22,59 @@
 
 char cCurrentPath[FILENAME_MAX];
 
-void tesselate(const char * fName, int detailLevel) {
+/*
+class Triangle {
+public:
+
+//Rep
+std::vector<glm::vec3> verticies;
+glm::uvec3 indicies;
+
+//Methods
+Triangle(std::vector<glm::vec3> & verticies);
+
+};
+
+Triangle::Triangle(std::vector<glm::vec3> & verticies){
+this->indicies.x = 0;
+this->indicies.y = 1;
+this->indicies.z = 2;
+
+assert(verticies.size() == 3);
+this->verticies = verticies;
+}
+*/
+
+class itrVec3 {
+public:
+	std::vector<std::unordered_set<glm::vec3>::iterator > members;
+
+	itrVec3() { members.resize(3); }
+};
+
+
+class Triangles {
+public:
+	std::unordered_set<glm::vec3> verticies;
+	std::list<itrVec3> indicies;
+
+	Triangles() {}
+};
+
+std::ostream &operator<< (std::ostream &out, const glm::vec3 &vec) {
+	out << "{"
+		<< vec.x << " " << vec.y << " " << vec.z
+		<< "}";
+
+	return out;
+}
+
+void tesselate(const char * fName, int detailLevel, std::vector<glm::vec3> & inputTriangles) {
 	std::vector<tinyobj::shape_t> shapes;
 	ExtractFromFile(fName, shapes);
+	Triangles triangles = Triangles();
+	itrVec3 tmp = itrVec3();
+	tmp.members[0] = tmp.members[1] = tmp.members[2] = triangles.verticies.end();
 
 	for (size_t i = 0; i < shapes.size(); i++) {
 		printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
@@ -30,7 +82,9 @@ void tesselate(const char * fName, int detailLevel) {
 		printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 		assert((shapes[i].mesh.indices.size() % 3) == 0);
 		for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++) {
-			printf("  idx[%ld] = %d, %d, %d. mat_id = %d\n", f, shapes[i].mesh.indices[3 * f + 0], shapes[i].mesh.indices[3 * f + 1], shapes[i].mesh.indices[3 * f + 2], shapes[i].mesh.material_ids[f]);
+			printf("  idx[%ld] = %d, %d, %d. mat_id = %d\n", f, 
+				shapes[i].mesh.indices[3 * f + 0], shapes[i].mesh.indices[3 * f + 1], 
+				shapes[i].mesh.indices[3 * f + 2], shapes[i].mesh.material_ids[f]);
 		}
 
 		printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
@@ -40,7 +94,12 @@ void tesselate(const char * fName, int detailLevel) {
 				shapes[i].mesh.positions[3 * v + 0],
 				shapes[i].mesh.positions[3 * v + 1],
 				shapes[i].mesh.positions[3 * v + 2]);
+			
+			triangles.push_back(glm::vec3(shapes[i].mesh.positions[3 * v + 0],
+				shapes[i].mesh.positions[3 * v + 1],
+				shapes[i].mesh.positions[3 * v + 2]));
 		}
+
 	}
 
 	int x = 0; //Allows addition of breakpoint after Extract function
@@ -69,7 +128,15 @@ int main() {
 	/*std::ifstream ifs(fName);
 	assert(ifs.good());*/
 
-	tesselate(fName, 0);
+	std::vector<glm::vec3> triangles;
+
+	tesselate(fName, 0, triangles);
+
+	for (int i = 0; i < triangles.size(); ++i) {
+		std::cout << triangles[i] << std::endl;
+	}
+
+	int xx=0;
 
 	return 0;
 }
