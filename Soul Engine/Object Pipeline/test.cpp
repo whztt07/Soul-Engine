@@ -9,6 +9,8 @@
 #include <cassert>
 #include <fstream>
 
+typedef std::vector<std::unordered_set<glm::vec3>::iterator > itrVec3
+
 
 /*
 #include <stdio.h>  // defines FILENAME_MAX 
@@ -45,12 +47,12 @@ this->verticies = verticies;
 }
 */
 
-class itrVec3 {
+/*class itrVec3 {
 public:
 	std::vector<std::unordered_set<glm::vec3>::iterator > members;
 
 	itrVec3() { members.resize(3); }
-};
+};*/
 
 
 class Triangles {
@@ -74,7 +76,7 @@ void tesselate(const char * fName, int detailLevel, std::vector<glm::vec3> & inp
 	ExtractFromFile(fName, shapes);
 	Triangles triangles = Triangles();
 	itrVec3 tmp = itrVec3();
-	tmp.members[0] = tmp.members[1] = tmp.members[2] = triangles.verticies.end();
+	tmp[0] = tmp[1] = tmp[2] = triangles.verticies.end();
 
 	for (size_t i = 0; i < shapes.size(); i++) {
 		printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
