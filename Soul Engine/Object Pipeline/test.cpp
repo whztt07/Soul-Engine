@@ -9,7 +9,7 @@
 #include <cassert>
 #include <fstream>
 
-typedef std::vector<std::unordered_set<glm::vec3>::iterator > itrVec3
+typedef std::vector<std::unordered_set<glm::vec3>::iterator > itrVec3;
 
 
 /*
