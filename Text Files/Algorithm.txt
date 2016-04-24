@@ -2,70 +2,32 @@ Algorithm: void tesselate(const char * fName, float detail)
 
 Extract Obj from file		//ExtractFromFile(fName) 
 
-Let n be the number of points in the high-detail mesh
+Convert extracted data to custom Triangles class format
 
-Let k=n/3
+get iterator to beginning of triangles
 
-
-k-cluster the high-detail mesh at this point (with groups of size 3, except for fact that n%3 may not be 0)
-	//Ignore ==> use Kruskal`s algorithm and stop when there are k/3 components
-	//Found some ideas of how to achieve this at: 
-	//http://stackoverflow.com/questions/5452576/k-means-algorithm-variation-with-equal-cluster-size
-	//and
-	//http://stackoverflow.com/questions/8796682/group-n-points-in-k-clusters-of-equal-size
-	//Will be looking into further
-
-**********************************************************************************
-Am going to attempt to use this algorithm found from the second link.
-I will likely use a random initial centers and then later implement kmenas++ to improve this.
-Read more about kmeans++ here https://en.wikipedia.org/wiki/K-means%2B%2B
+define metric as a boolean condition based on the current triangle or set of triangles - to be decided
 
 
-down vote
-Try this k-means variation:
 
-Initialization:
+while metric has not been satisfied:
+	get triangles current iterator is pointing to
 
-choose k centers from the dataset at random, or even better using kmeans++ strategy
-for each point, compute the distance to its nearest cluster center, and build a heap for this
-draw points from the heap, and assign them to the nearest cluster, unless the cluster is already overfull. If so, compute the next nearest cluster center and reinsert into the heap
-In the end, you should have a paritioning that satisfies your requirements of the +-1 same number of objects per cluster (make sure the last few clusters also have the right number. The first m clusters should have ceil objects, the remainder exactly floor objects.) Note that using a heap ensures the clusters remain convex: if they were no longer convex, there would have been a better swap candidate.
+	get midpoints of all triangle verticies
 
-Iteration step:
+	create 4 new triangles from the from the existing triangle using the midpoints like shown below:
 
-Requisites: a list for each cluster with "swap proposals" (objects that would prefer to be in a different cluster).
+/*
+			^
+		   / \
+		  /   \
+		 /.....\
+		/  x x  \
+		____x____  
 
-E step: compute the updated cluster centers as in regular k-means
+	Note that the above is a depiction and not to scale
+*/
 
-M step: Iterating through all points (either just one, or all in one batch)
-
-Compute nearest cluster center to object / all cluster centers that are closer than the current clusters. If it is a different cluster:
-
-If the other cluster is smaller than the current cluster, just move it to the new cluster
-If there is a swap proposal from the other cluster (or any cluster with a lower distance), swap the two element cluster assignments (if there is more than one offer, choose the one with the largest improvement)
-otherwise, indicate a swap proposal for the other cluster
-The cluster sizes remain invariant (+- the ceil/floor difference), an objects are only moved from one cluster to another as long as it results in an improvement of the estimation. It should therefore converge at some point like k-means. It might be a bit slower (i.e. more iterations) though.
-
-I do not know if this has been published or implemented before. It's just what I would try (if I would try k-means. there are much better clustering algorithms.)
-
-**********************************************************************************
-
-handle possibility of n%3 != 0
-	if n%3==1
-		find group of 4
-		pick an arbitrary point and run 2-nearest neighbors
-		take other point and create a triangle with its 2 nearest neighbors
-		make a triangle from these points
-
-	else if n%3==2
-		if 2 groups of 4 points
-			run the code for "n%3==1" on each group of 4
-		else //there is a group of five
-			find the group of 5
-			pick an arbitrary point and run 2-nearest neighbors
-			find nearest neighbor of the midpoint of the two points that weren't nearest neighbors
-			create a triangle from these points 
-
-Use these triangles for low detail mesh
-
-Handle subdivision for cases violating detail parameter	
+	Insert 4 new triangles at end of list
+	
+	remove original triangle (advancing iterator to next triangle)
