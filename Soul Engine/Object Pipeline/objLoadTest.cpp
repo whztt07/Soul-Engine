@@ -17,14 +17,29 @@ void processFile(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::mat
 //Tesselate the shapes into triangles whose size are given by argument "metric"
 //TODO: Subdivide triangles
 void tesselate(std::list<glm::vec3>& indices, std::list<glm::vec3>& vertices, std::vector<tinyobj::shape_t>& shapes, float metric) {
+	
+	//Loop over triangles
 	for (size_t i = 0; i < shapes.size(); i++) {
+		printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
+		printf("Size of shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
+
+		//Store index information
 		for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++) {
+			printf("  idx[%ld] = %d, %d, %d. mat_id = %d\n", f,
+				shapes[i].mesh.indices[3 * f + 0], shapes[i].mesh.indices[3 * f + 1],
+				shapes[i].mesh.indices[3 * f + 2], shapes[i].mesh.material_ids[f]);
 			indices.push_back(glm::vec3(shapes[i].mesh.indices[3 * f + 0],
 				shapes[i].mesh.indices[3 * f + 1],
 				shapes[i].mesh.indices[3 * f + 2]));
 		}
 		
+		//Store vertex information
+		printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
 		for (size_t v = 0; v < shapes[i].mesh.positions.size() / 3; v++) {
+			printf("  v[%ld] = (%f, %f, %f)\n", v,
+				shapes[i].mesh.positions[3 * v + 0],
+				shapes[i].mesh.positions[3 * v + 1],
+				shapes[i].mesh.positions[3 * v + 2]);
 			vertices.push_back(glm::vec3(shapes[i].mesh.positions[3 * v + 0],
 				shapes[i].mesh.positions[3 * v + 1],
 				shapes[i].mesh.positions[3 * v + 2]));
@@ -41,7 +56,7 @@ int main() {
 	std::list<glm::vec3> indices;
 	std::list<glm::vec3> vertices;
 	tesselate(indices, vertices, shapes, CENTIMETER*5);
-	std::cout << "Press any key to exit ..." << std::endl;
+	std::cout << "Press enter to exit ..." << std::endl;
 	getchar(); //keep terminal window open until keypress
 	
 	return 0;
