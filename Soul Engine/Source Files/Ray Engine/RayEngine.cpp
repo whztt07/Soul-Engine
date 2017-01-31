@@ -1,25 +1,23 @@
 #include "RayEngine.h"
 #include "CUDA/RayEngine.cuh"
+#include "Utility\CUDA\CUDAHelper.cuh"
 
 
-std::vector<RayJob*> jobList;
-
+std::vector<RayJob> jobList;
 
 void RayEngine::Process(const Scene* scene){
 	ProcessJobs(jobList, scene);
 }
 
-RayJob* RayEngine::AddRayJob(rayType whatToGet, uint rayAmount,
-	uint samples, Camera* camera, uint resBuffN){
+void RayEngine::AddRayJob(rayType whatToGet, uint rayAmount,
+	uint samples, Camera* camera, void* resultsIn) {
 
-	RayJob* newJob = new RayJob(whatToGet, rayAmount, samples, camera, resBuffN);
-	jobList.push_back(newJob);
+	jobList.push_back({ whatToGet, rayAmount, samples, camera, resultsIn });
 
-	return newJob;
 }
 
 bool RayEngine::ChangeJob(RayJob* job, uint rayAmount, 
-	uint samples, Camera* camera){
+	float samples, Camera* camera){
 
 	if (rayAmount<=job->RayAmountMax()){
 		job->GetRayAmount() = rayAmount;
@@ -38,7 +36,7 @@ void RayEngine::Clear(){
 	ClearResults(jobList);
 }
 
-bool RayEngine::SwapResults(RayJob* job, uint a, uint b){
-	job->SwapResults(a, b);
-	return true;
+void RayEngine::Clean(){
+	CudaCheck(cudaDeviceSynchronize());
+	Cleanup();
 }
