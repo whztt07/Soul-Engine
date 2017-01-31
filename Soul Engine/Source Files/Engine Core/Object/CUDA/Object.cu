@@ -1,125 +1,192 @@
 #include "Object.cuh"
+#include "Utility\CUDA\CUDAHelper.cuh"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
+#include <unordered_map>
 
 Object::Object(){
 
-	verticeAmount=0;
-	faceAmount=0;
+	verticeAmount = 0;
+	faceAmount = 0;
 	materialSize = 0;
 	localSceneIndex = 0;
 	ready = false;
 
-	vertices=NULL;
+	xyzPosition = glm::vec3(0);
+
+	vertices = NULL;
 	faces = NULL;
-	materials = NULL;
+	materialP = NULL;
+}
+Object::Object(glm::vec3 pos, std::string name, Material* mat){
+
+	verticeAmount = 0;
+	faceAmount = 0;
+	materialSize = 1;
+	localSceneIndex = 0;
+	ready = false;
+
+	xyzPosition = glm::vec3(0);
+
+	vertices = NULL;
+	faces = NULL;
+	CudaCheck(cudaMallocManaged((void**)&materialP, materialSize*sizeof(Material*)));
+	materialP[0] = mat;
+
+	xyzPosition = pos;
+	ExtractFromFile(name.c_str());
 }
 
 void Object::AddVertices(Vertex* vertices, uint vSize){
-	
+
 }
 void Object::AddFaces(Face* vertices, uint fSize){
 
 }
 void Object::ExtractFromFile(const char* name){
+
+
+
+	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
-	std::string err = tinyobj::LoadObj(shapes, materials, name, NULL);
+	std::string err;
 
-	if (!err.empty()) {
-		std::cerr << err << std::endl;
-	}
-	
-	uint overallSize = 0;
-	uint faceOverallSize = 0;
-	for (uint i = 0; i < shapes.size(); i++){
-		overallSize += shapes[i].mesh.positions.size();
-		faceOverallSize += shapes[i].mesh.indices.size();
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, name)) {
+		throw std::runtime_error(err);
 	}
 
+	assert(shapes.size() == 1);
 
-	verticeAmount = overallSize;
-	faceAmount = faceOverallSize;
-	cudaDeviceSynchronize();
+	verticeAmount = attrib.vertices.size() / 3;
+	faceAmount = shapes[0].mesh.indices.size() / 3;
 
-	cudaMallocManaged(&vertices,
-		verticeAmount*sizeof(Vertex));
+	glm::vec3 max = glm::vec3(attrib.vertices[0], attrib.vertices[1], attrib.vertices[2]);
+	glm::vec3 min = max;
 
-	cudaMallocManaged(&faces,
-		faceAmount*sizeof(Face));
+	CudaCheck(cudaDeviceSynchronize());
 
-	cudaDeviceSynchronize();
+	CudaCheck(cudaMallocManaged((void**)&vertices,
+		verticeAmount*sizeof(Vertex)));
 
-	uint overallOffset = 0;
-	uint faceOffset = 0;
+	CudaCheck(cudaMallocManaged((void**)&faces,
+		faceAmount*sizeof(Face)));
 
-	for (uint i = 0; i < shapes.size(); i++){
-		for (uint v = 0; v < verticeAmount / 3; v++){
-			vertices[overallOffset + v].SetData(
-				glm::vec3(shapes[i].mesh.positions[3 * v + 0], shapes[i].mesh.positions[3 * v + 1], shapes[i].mesh.positions[3 * v + 2]),
-				glm::vec2(shapes[i].mesh.texcoords[2 * v + 0], shapes[i].mesh.texcoords[2 * v + 1]),
-				glm::vec3(shapes[i].mesh.normals[3 * v + 0], shapes[i].mesh.normals[3 * v + 1], shapes[i].mesh.normals[3 * v + 2]));
-		}
-		overallOffset += shapes[i].mesh.positions.size();
+	CudaCheck(cudaDeviceSynchronize());
 
-		for (uint f = 0; f < faceAmount / 3; f++){
-			faces[faceOffset + f].SetData(
-				glm::uvec3(shapes[i].mesh.indices[3 * f + 0], shapes[i].mesh.indices[3 * f + 1], shapes[i].mesh.indices[3 * f + 2]),
-				shapes[i].mesh.material_ids[f]);
-		}
-		faceOffset += shapes[i].mesh.indices.size();
+
+
+	std::unordered_map<Vertex, int> uniqueVertices = {};
+
+	const auto& shape = shapes[0];
+
+	for (size_t f = 0; f < shape.mesh.indices.size() / 3; f++) {
+
+
+		//grab commenly used variables
+		tinyobj::index_t id0 = shape.mesh.indices[3 * f + 0];
+		tinyobj::index_t id1 = shape.mesh.indices[3 * f + 1];
+		tinyobj::index_t id2 = shape.mesh.indices[3 * f + 2];
+
+		int current_material_id = shape.mesh.material_ids[f];
+
+		faces[f].indices.x = id0.vertex_index;
+		vertices[id0.vertex_index].position.x = attrib.vertices[id0.vertex_index * 3 + 0];
+		vertices[id0.vertex_index].position.y = attrib.vertices[id0.vertex_index * 3 + 1];
+		vertices[id0.vertex_index].position.z = attrib.vertices[id0.vertex_index * 3 + 2];
+
+		vertices[id0.vertex_index].textureCoord.x = attrib.texcoords[id0.texcoord_index * 2 + 0];
+		vertices[id0.vertex_index].textureCoord.y = 1.0f - attrib.texcoords[id0.texcoord_index * 2 + 1];
+
+		vertices[id0.vertex_index].normal.x = attrib.normals[id0.normal_index * 3 + 0];
+		vertices[id0.vertex_index].normal.y = attrib.normals[id0.normal_index * 3 + 1];
+		vertices[id0.vertex_index].normal.z = attrib.normals[id0.normal_index * 3 + 2];
+
+		vertices[id0.vertex_index].position += xyzPosition;
+		max = glm::max(vertices[id0.vertex_index].position, max);
+		min = glm::min(vertices[id0.vertex_index].position, min);
+
+		///////////////////
+
+		faces[f].indices.y = id1.vertex_index;
+		vertices[id1.vertex_index].position.x = attrib.vertices[id1.vertex_index * 3 + 0];
+		vertices[id1.vertex_index].position.y = attrib.vertices[id1.vertex_index * 3 + 1];
+		vertices[id1.vertex_index].position.z = attrib.vertices[id1.vertex_index * 3 + 2];
+
+		vertices[id1.vertex_index].textureCoord.x = attrib.texcoords[id1.texcoord_index * 2 + 0];
+		vertices[id1.vertex_index].textureCoord.y = 1.0f - attrib.texcoords[id1.texcoord_index * 2 + 1];
+
+		vertices[id1.vertex_index].normal.x = attrib.normals[id1.normal_index * 3 + 0];
+		vertices[id1.vertex_index].normal.y = attrib.normals[id1.normal_index * 3 + 1];
+		vertices[id1.vertex_index].normal.z = attrib.normals[id1.normal_index * 3 + 2];
+
+		vertices[id1.vertex_index].position += xyzPosition;
+		max = glm::max(vertices[id1.vertex_index].position, max);
+		min = glm::min(vertices[id1.vertex_index].position, min);
+
+		///////////////////
+
+		faces[f].indices.z = id2.vertex_index;
+		vertices[id2.vertex_index].position.x = attrib.vertices[id2.vertex_index * 3 + 0];
+		vertices[id2.vertex_index].position.y = attrib.vertices[id2.vertex_index * 3 + 1];
+		vertices[id2.vertex_index].position.z = attrib.vertices[id2.vertex_index * 3 + 2];
+
+		vertices[id2.vertex_index].textureCoord.x = attrib.texcoords[id2.texcoord_index * 2 + 0];
+		vertices[id2.vertex_index].textureCoord.y = 1.0f - attrib.texcoords[id2.texcoord_index * 2 + 1];
+
+		vertices[id2.vertex_index].normal.x = attrib.normals[id2.normal_index * 3 + 0];
+		vertices[id2.vertex_index].normal.y = attrib.normals[id2.normal_index * 3 + 1];
+		vertices[id2.vertex_index].normal.z = attrib.normals[id2.normal_index * 3 + 2];
+
+		vertices[id2.vertex_index].position += xyzPosition;
+		max = glm::max(vertices[id2.vertex_index].position, max);
+		min = glm::min(vertices[id2.vertex_index].position, min);
+
+		faces[f].materialPointer = materialP[0];
 	}
-	cudaDeviceSynchronize();
+
+
+
+
+	//LOG(TRACE, "\nINDICES: " << faceAmount << std::endl;
+	//for (int i = 0; i < faceAmount; i++){
+	//	LOG(TRACE,("%i ", faces[i].indices.x);
+	//	LOG(TRACE,("%i ", faces[i].indices.y);
+	//	LOG(TRACE,("%i \n", faces[i].indices.z);
+	//}
+
+	//LOG(TRACE, "\nVERTICES: " << verticeAmount << std::endl;
+
+	//for (int i = 0; i < verticeAmount; i++){
+	//	LOG(TRACE, "\n	Positions: "  << std::endl;
+
+	//	LOG(TRACE,("%f ", vertices[i].position.x);
+	//	LOG(TRACE,("%f ", vertices[i].position.y);
+	//	LOG(TRACE,("%f \n", vertices[i].position.z);
+
+	//	LOG(TRACE,"\n	Normals: " << std::endl;
+
+	//	LOG(TRACE,("%f ", vertices[i].normal.x);
+	//	LOG(TRACE,("%f ", vertices[i].normal.y);
+	//	LOG(TRACE,("%f \n", vertices[i].normal.z);
+
+	//	LOG(TRACE, "\n	TexCoords: " << std::endl;
+
+	//	LOG(TRACE,("%f ", vertices[i].textureCoord.x);
+	//	LOG(TRACE,("%f \n", vertices[i].textureCoord.y);
+	//}
+
+	box.max = max;
+	box.min = min;
+
+	int device=0;
+	CudaCheck(cudaGetDevice(&device));
+
+	/*CudaCheck(cudaMemAdvise(vertices, verticeAmount*sizeof(Vertex), cudaMemAdviseSetAccessedBy, device));
+	CudaCheck(cudaMemPrefetchAsync(vertices, verticeAmount*sizeof(Vertex), device));
+
+	CudaCheck(cudaMemAdvise(faces, faceAmount*sizeof(Face), cudaMemAdviseSetAccessedBy, device));
+	CudaCheck(cudaMemPrefetchAsync(faces, faceAmount*sizeof(Face), device));*/
 }
-//std::string Object::ResourcePath(std::string fileName) {
-//		return  fileName;
-//}
-//
-
-//void Object::GetVertices(GLuint& buffer, GLuint& sizeVert){
-//	buffer = storageVertices;
-//	sizeVert = verticeAmount;
-//}
-//void Object::GetIndices(GLuint& buffer, GLuint& sizeIn){
-//	buffer = storageIndices;
-//	sizeIn = indiceAmount;
-//}
-//void Object::GetTextureCoords(GLuint& buffer, GLuint& sizeVert){
-//	buffer = storageTextureCoords;
-//	sizeVert = verticeAmount;
-//}
-//void Object::GetNormals(GLuint& buffer, GLuint& sizeVert){
-//	buffer = storageNormals;
-//	sizeVert = verticeAmount;
-//}
-//void Object::GetMaterials(std::list<Material*>& material){
-//	for (std::list<Material>::iterator itr = materials.begin(); itr != materials.end(); itr++){
-//		material.push_back(&*itr);
-//	}
-//}
-//void Object::GetPhysics(glm::vec3& pos, glm::vec3& vel,bool& isStat){
-//	pos = xyzPosition;
-//	vel = velocity;
-//	isStat = isStatic;
-//}
-//void Object::SetPhysics(glm::vec3& pos, glm::vec3& vel, bool& isStat){
-//	xyzPosition = pos;
-//	velocity = vel;
-//	isStatic = isStat;
-//}
-//Object::Mesh::VertexHandle Object::AddVertex(float x, float y, float z){
-//	return mesh.add_vertex(Mesh::Point(x, y, z));
-//}
-//Object::Mesh::VertexHandle Object::AddVertex(glm::vec3 data){
-//	return mesh.add_vertex(Mesh::Point(data.x, data.y, data.z));
-//}
-//Object::Mesh::VertexHandle Object::AddVertex(glm::vec4 data){
-//	return mesh.add_vertex(Mesh::Point(data.x, data.y, data.z));
-//}
-//void Object::AddFace(Object::Mesh::VertexHandle x, Object::Mesh::VertexHandle y, Object::Mesh::VertexHandle z){
-//	std::vector<Mesh::VertexHandle>  face_vhandles;
-//	face_vhandles.resize(3);
-//	face_vhandles[0] = x;
-//	face_vhandles[1] = y;
-//	face_vhandles[2] = z;
-//	mesh.add_face(face_vhandles);
-//}

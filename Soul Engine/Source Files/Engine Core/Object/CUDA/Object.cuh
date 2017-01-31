@@ -1,21 +1,37 @@
 #pragma once
 
-#include "Utility\CUDAIncludes.h"
-#include "Utility/OpenGL/ShaderSupport.h"
-#include "Utility/OpenGL/Shader.h"
-#include "Engine Core/Material/Texture/Texture.h"
 #include "Engine Core/Camera/CUDA/Camera.cuh"
 #include "Input/Input.h"
-#include "Engine Core/Material/Texture/Bitmap.h"
 #include "Engine Core/Material/Material.h"
 #include "Engine Core/Object/CUDA/Vertex.cuh"
 #include "Engine Core/Object/CUDA/Face.cuh"
-#include "Engine Core/Object/ObjLoader.h"
+#include "Bounding Volume Heirarchy\BoundingBox.h"
+#include "Metrics.h"
+
+class Face;
+
+
+namespace std {
+	template<> struct hash<Vertex> {
+		size_t operator()(Vertex const& vertex) const {
+			return ((hash<float>()(vertex.position.x) ^
+				hash<float>()(vertex.position.y) ^
+				hash<float>()(vertex.position.z) ^
+				(hash<float>()(vertex.normal.x) << 1) ^
+				(hash<float>()(vertex.normal.y) << 1) ^
+				(hash<float>()(vertex.normal.z) << 1)) >> 1) ^
+				(hash<float>()(vertex.textureCoord.x) << 1) ^
+				(hash<float>()(vertex.textureCoord.y) << 1);
+		}
+	};
+}
 
 class Object: public Managed{
 	public:
 
 		Object();
+
+		Object(glm::vec3,std::string,Material*);
 
 		bool requestRemoval;
 		bool ready;
@@ -25,14 +41,6 @@ class Object: public Managed{
 		glm::vec3 velocity;
 		glm::vec3 acceleration;
 
-		/*	virtual void GetVertices(GLuint& buffer, GLuint& sizeVert);
-			virtual void GetIndices(GLuint& buffer, GLuint& sizeIn);
-			virtual void GetTextureCoords(GLuint& buffer, GLuint& sizeVert);
-			virtual void GetNormals(GLuint& buffer, GLuint& sizeVert);
-			virtual void GetMaterials(std::list<Material*>& material);
-			virtual void GetPhysics(glm::vec3&, glm::vec3&,bool&);
-			virtual void SetPhysics(glm::vec3&, glm::vec3&, bool&);*/
-
 		void AddVertices(Vertex*,uint);
 		void AddFaces(Face*, uint);
 		void ExtractFromFile(const char*);
@@ -41,14 +49,18 @@ class Object: public Managed{
 		uint faceAmount;
 
 		Vertex* vertices;
+		Vertex* verticesCPU;
 		Face* faces;
+		Face* facesCPU;
 
-	virtual void Update(double) = 0;
-	virtual void UpdateLate(double) = 0;
-	virtual void Load() = 0;
+	void Update(double);
+	void UpdateLate(double);
+	void Load();
 
-	Material* materials;
+	Material** materialP;
 	uint materialSize;
+
+	BoundingBox box;
 
 	uint localSceneIndex;
 protected:
