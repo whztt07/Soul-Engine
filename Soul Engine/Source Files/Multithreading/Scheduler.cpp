@@ -1,15 +1,17 @@
 #include "Scheduler.h"
 
-#include "Metrics.h"
+//#include "Metrics.h"
+#include "test_includes/Metrics.h"
 
 #include <chrono>
 #include <thread>
-#include <algorithm>  
+#include <algorithm>
 #include <condition_variable>
 #include <mutex>
 #include <list>
-#include <malloc.h>  
-#include "Utility\Settings.h"
+#include <malloc.h>
+//#include "Utility\Settings.h"
+#include "test_includes/Settings.h"
 
 //Scheduler Variables//
 static std::thread* threads;
@@ -44,7 +46,10 @@ namespace Scheduler {
 			ptr->~condition_variable_any();
 
 			//TODO: Make this aligned_alloc with c++17, not visual studio specific code
+			#ifdef _MSC_VER
 			_aligned_free(ptr);
+			#endif
+			ptr = aligned_alloc(,sizeof(ptr));
 		}
 
 		//Init the fiber specific stuff
