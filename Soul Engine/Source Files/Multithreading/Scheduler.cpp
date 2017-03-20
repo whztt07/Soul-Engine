@@ -48,8 +48,9 @@ namespace Scheduler {
 			//TODO: Make this aligned_alloc with c++17, not visual studio specific code
 			#ifdef _MSC_VER
 			_aligned_free(ptr);
-			#endif
-			ptr = aligned_alloc(,sizeof(ptr));
+			#else
+			free(ptr);
+      #endif
 		}
 
 		//Init the fiber specific stuff
@@ -63,9 +64,14 @@ namespace Scheduler {
 			if (!detail::blockCondition->get()) {
 
 				//TODO: Make this aligned_alloc with c++17, not visual studio specific code
+        #ifdef _MSC_VER
 				boost::fibers::condition_variable_any* newData =
 					(boost::fibers::condition_variable_any*)_aligned_malloc(sizeof(boost::fibers::condition_variable_any), 64); //needs 64 alignment
 				new (newData) boost::fibers::condition_variable_any();
+        #else
+        boost::fibers::condition_variable_any* newData =
+					(boost::fibers::condition_variable_any*)aligned_alloc(64,sizeof(boost::fibers::condition_variable_any)); //needs 64 alignment
+        #endif
 				detail::blockCondition->reset(newData);
 			}
 		}
