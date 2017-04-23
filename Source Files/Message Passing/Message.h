@@ -7,7 +7,7 @@ namespace Messaging {
 	class Message
 	{
 	public:
-		Message(PriorityType p, DestinationType d);
+		Message(PriorityType p, DestinationType d, const std::string & c, ArgType a);
 		
 		unsigned int getId() const { return id; }
 		PriorityType getPriority() const { return priority; }
@@ -16,7 +16,10 @@ namespace Messaging {
 	protected:
 		PriorityType priority;
 		DestinationType destination;
+		std::string content;
+		ArgType args;
 		unsigned int id;
+		
 		//store the message???
 
 		static std::atomic_uint32_t nextId;

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Message.h"
 #include "../Multithreading/Scheduler.h"
 
@@ -13,10 +14,13 @@ namespace Messaging {
 		MessageHandler();
 		bool addMessage(MessagePointer message);
 		bool getMessage(DestinationType dest);
+		bool registerFunction(DestinationType dest, const std::string & message, FunctionType function);
 
 	private:
 		MessageMap allMessages;
-		MutexMap mutexes;
+		MutexMap messageMutexes;
+		FunctionsMap allFunctions;
+		MutexMap functionMutexes;
 
 		/* data */
 	};

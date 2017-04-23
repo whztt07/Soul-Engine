@@ -3,9 +3,10 @@
 namespace Messaging {
 	std::atomic_uint32_t Message::nextId = 0;
 
-	Message::Message(PriorityType p, Destination d) {
-		priority = p; 
+	Message::Message(PriorityType p, Destination d, const std::string& c, ArgType a)
+		: priority(p), destination(d), args(a) {
+		
 		id = static_cast<unsigned int>(getNextId());
-		destination = d;
+		content = std::string(c);
 	}
 }

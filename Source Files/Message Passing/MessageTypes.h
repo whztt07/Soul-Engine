@@ -1,12 +1,20 @@
 #pragma once
 
+/*
+	TODO:
+	- Finish implementation
+	- Replace smart pointers with manual memory allocation/deallocation
+*/
+
 #include <vector>
 #include <queue>
+#include <string>
 #include <unordered_map>
 #include <type_traits>
 #include <memory>
 #include <atomic>
 #include <mutex>
+#include <functional>
 
 #define ALL_PRIORITIES { LOW, HIGH, IMMEDIATE }
 #define ALL_DESTINATIONS { DISPLAY, SCHEDULER, PHYS_ENG, RASTER_ENG, RAY_ENG, RENDERER, SETTINGS, LOGGER }
@@ -21,9 +29,18 @@ namespace Messaging {
 
 	typedef std::shared_ptr<Message> MessagePointer;
 
+	typedef std::shared_ptr<void> ArgType;
+	typedef std::function<void(ArgType)> FunctionType;
+
 	typedef std::priority_queue<MessagePointer, std::vector<MessagePointer>, detail::compareMessages> MessageQueue;
 	typedef std::unordered_map<DestinationType, MessageQueue> MessageMap;
+
 	typedef std::unordered_map<DestinationType, std::mutex> MutexMap;
+
+	typedef std::unordered_map<std::string, FunctionType> FunctionMap;
+	typedef std::unordered_map<DestinationType, FunctionMap> FunctionsMap;
+	
+	
 
 	namespace detail {
 		const std::vector<PriorityType> priorities = ALL_PRIORITIES; // { LOW, HIGH, IMMEDIATE };
