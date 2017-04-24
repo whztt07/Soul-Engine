@@ -47,12 +47,30 @@ namespace Messaging {
 		queue.pop();
 		messageMutexes[dest].unlock();
 
+		//unpack message
+		std::string content = message->getContent();
+		ArgType args = message->getArgs();
+		PriorityType priority = message->getPriority();
+
+		delete message;
+
+		FiberPolicy policy = (priority == IMMEDIATE) ? LAUNCH_IMMEDIATE : LAUNCH_CONTINUE;
+		FiberPriority fiberPriority = (priority == LOW) ? FIBER_LOW : FIBER_HIGH;
+
+		functionMutexes[dest].lock();
+		std::function<void(ArgType)> function = allFunctions[dest][content];
+		functionMutexes[dest].unlock();
+
+		Scheduler::AddTask(policy, fiberPriority, false, [function, args]() {
+			function(args);
+		});
+
 		// PROCESS MESSAGE HERE
 		/*
 			Lock Functions map mutex
 			Get corresponding function
 			Unlock Functions map
-			Cast ArgType to correct pointer
+			Cast ArgType to correct pointer -- do this in destination function??
 			Send function to scheduler with givern args as lambda function with
 				args being captured
 			

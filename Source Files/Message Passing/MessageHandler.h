@@ -14,7 +14,10 @@ namespace Messaging {
 		MessageHandler();
 		bool addMessage(MessagePointer message);
 		bool getMessage(DestinationType dest);
-		bool registerFunction(DestinationType dest, const std::string & message, FunctionType function);
+
+		//Note: function must be implemented by engine module dest.
+		//Also, function must delete args param, or memory leaks will occur
+		bool registerFunction(DestinationType dest, const std::string & message, FunctionType function); 
 
 	private:
 		MessageMap allMessages;

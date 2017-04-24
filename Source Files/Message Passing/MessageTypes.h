@@ -4,6 +4,7 @@
 	TODO:
 	- Finish implementation
 	- Replace smart pointers with manual memory allocation/deallocation
+	- Run on MAIN???
 */
 
 #include <vector>
@@ -27,9 +28,11 @@ namespace Messaging {
 	typedef Priority PriorityType;
 	typedef Destination DestinationType;
 
-	typedef std::shared_ptr<Message> MessagePointer;
+	typedef Message* MessagePointer;
+	//typedef std::shared_ptr<Message> MessagePointer;
 
-	typedef std::shared_ptr<void> ArgType;
+	typedef void* ArgType;
+	//typedef std::shared_ptr<void> ArgType;
 	typedef std::function<void(ArgType)> FunctionType;
 
 	typedef std::priority_queue<MessagePointer, std::vector<MessagePointer>, detail::compareMessages> MessageQueue;

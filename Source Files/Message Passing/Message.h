@@ -12,6 +12,8 @@ namespace Messaging {
 		unsigned int getId() const { return id; }
 		PriorityType getPriority() const { return priority; }
 		DestinationType getDestination() const { return destination };
+		std::string getContent() const { return content; }
+		ArgType getArgs() const { return args; }
 
 	protected:
 		PriorityType priority;
@@ -19,13 +21,8 @@ namespace Messaging {
 		std::string content;
 		ArgType args;
 		unsigned int id;
-		
-		//store the message???
 
 		static std::atomic_uint32_t nextId;
 		static std::atomic_uint32_t getNextId() { return nextId++; }
-
-
-		/* data */
 	};
 }
