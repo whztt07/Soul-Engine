@@ -12,7 +12,11 @@ namespace Messaging {
 	}
 
 	bool MessageHandler::addMessage(MessagePointer message) {
-		if (!message) return false;
+		if (!message) {
+			delete message;
+			return false;
+		}
+		
 		DestinationType dest = message->getDestination();
 		PriorityType p = message->getPriority();
 		messageMutexes[dest].lock();
@@ -27,17 +31,18 @@ namespace Messaging {
 		messageMutexes[dest].unlock();
 
 		if (p == IMMEDIATE) {
-			Scheduler::AddTask(LAUNCH_IMMEDIATE, FIBER_HIGH, false, [dest,this]() {
+			/*Scheduler::AddTask(LAUNCH_IMMEDIATE, FIBER_HIGH, false, [dest,this]() {
 				this->getMessage(dest);
-			});
+			});*/
+			this->getMessage(dest);
 		}
 
 		return true;
 	}
 
 	bool MessageHandler::getMessage(DestinationType dest) {
-		MessageQueue & queue = allMessages[dest];
 		messageMutexes[dest].lock();
+		MessageQueue & queue = allMessages[dest];
 		if (queue.empty()) {
 			messageMutexes[dest].unlock();
 			return false;
@@ -58,6 +63,7 @@ namespace Messaging {
 		FiberPriority fiberPriority = (priority == LOW) ? FIBER_LOW : FIBER_HIGH;
 
 		functionMutexes[dest].lock();
+		if (allFunctions[dest].find(content) == allFunctions[dest].end()) return false; //No Function registered for this content -- Could log that content not registered here
 		std::function<void(ArgType)> function = allFunctions[dest][content];
 		functionMutexes[dest].unlock();
 
@@ -90,5 +96,25 @@ namespace Messaging {
 		
 		functionMutexes[dest].unlock();
 		return overwritten;
+	}
+
+	void addMessage(MessagePointer message, FiberPolicy fiberPolicy, FiberPriority fiberPriority) {
+		Scheduler::AddTask(fiberPolicy, fiberPriority, false, [message](){
+			messageHandler.addMessage(message);
+		});
+	}
+
+	void getMessage(DestinationType dest, FiberPolicy fiberPolicy, FiberPriority fiberPriority) {
+		Scheduler::AddTask(fiberPolicy, fiberPriority, false, [dest](){
+			messageHandler.getMessage(dest);
+		});
+	}
+
+	void registerFunction(DestinationType dest, const std::string & message, FunctionType function,
+		FiberPolicy fiberPolicy, FiberPriority fiberPriority) {
+
+		Scheduler::AddTask(fiberPolicy, fiberPriority, false, [dest,message,function](){
+			messageHandler.registerFunction(dest, message, function);
+		});
 	}
 }

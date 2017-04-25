@@ -8,6 +8,13 @@
 */
 
 namespace Messaging {
+	MessageHandler messageHandler;
+	
+	void addMessage(MessagePointer message, FiberPolicy fiberPolicy = LAUNCH_IMMEDIATE, FiberPriority fiberPriority = FIBER_HIGH);
+	void getMessage(DestinationType dest, FiberPolicy fiberPolicy = LAUNCH_IMMEDIATE, FiberPriority fiberPriority = FIBER_HIGH);
+	void registerFunction(DestinationType dest, const std::string & message, FunctionType function, 
+		FiberPolicy fiberPolicy = LAUNCH_IMMEDIATE, FiberPriority fiberPriority = FIBER_HIGH);
+
 	class MessageHandler
 	{
 	public:
@@ -20,11 +27,9 @@ namespace Messaging {
 		bool registerFunction(DestinationType dest, const std::string & message, FunctionType function); 
 
 	private:
-		MessageMap allMessages;
-		MutexMap messageMutexes;
-		FunctionsMap allFunctions;
-		MutexMap functionMutexes;
-
-		/* data */
+		MessageMap allMessages; //Messages to be rpocesed
+		MutexMap messageMutexes; //Mutexes to control access to messages
+		FunctionsMap allFunctions; //Functions registed by engine sub-systems
+		MutexMap functionMutexes; //Mutexes to control access to registered functions
 	};
 }
