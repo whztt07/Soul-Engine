@@ -1,0 +1,33 @@
+Algorithm: void tesselate(const char * fName, float detail)
+
+Extract Obj from file		//ExtractFromFile(fName) 
+
+Convert extracted data to custom Triangles class format
+
+get iterator to beginning of triangles
+
+define metric as a boolean condition based on the current triangle or set of triangles - to be decided
+
+
+
+while metric has not been satisfied:
+	get triangles current iterator is pointing to
+
+	get midpoints of all triangle verticies
+
+	create 4 new triangles from the from the existing triangle using the midpoints like shown below:
+
+/*
+			^
+		   / \
+		  /   \
+		 /.....\
+		/  x x  \
+		____x____  
+
+	Note that the above is a depiction and not to scale
+*/
+
+	Insert 4 new triangles at end of list
+	
+	remove original triangle (advancing iterator to next triangle)
