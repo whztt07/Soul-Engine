@@ -222,3 +222,5 @@ x64/Release/cudart64_75.dll
 /Soul Engine/Source Files/Engine Core/Allocator/LinearAllocator.vcxproj.filters
 /Soul Engine/Source Files/Engine Core/Allocator/LinearAllocator.vcxproj
 /Soul Engine/Source Files/Engine Core/Allocator/.vs/LinearAllocator/v15
+/Soul Engine/Source Files/Engine Core/Allocator/LinearAllocTest/.vs/LinearAllocTest/v15
+/Soul Engine/Source Files/Engine Core/Allocator/LinearAllocTest/LinearAllocTest.sln
