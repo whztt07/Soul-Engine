@@ -22,19 +22,17 @@ namespace Messaging {
 		messageMutexes[dest].lock();
 		MessageQueue & queue = allMessages[dest];
 		
-		//if (queue.empty()) {
-		//	mutexes[dest].unlock();
-		//	return false;
-		//}
-		
 		queue.push(message);
 		messageMutexes[dest].unlock();
 
 		if (p == IMMEDIATE) {
-			/*Scheduler::AddTask(LAUNCH_IMMEDIATE, FIBER_HIGH, false, [dest,this]() {
+			//Asynchronous
+			Scheduler::AddTask(LAUNCH_IMMEDIATE, FIBER_HIGH, false, [dest,this]() {
 				this->getMessage(dest);
-			});*/
-			this->getMessage(dest);
+			});
+
+			//Synchronous
+			//this->getMessage(dest);
 		}
 
 		return true;

@@ -3,10 +3,6 @@
 #include "Message.h"
 #include "../Multithreading/Scheduler.h"
 
-/*
-	Note to self: get running on scheduler maybe.
-*/
-
 namespace Messaging {
 	MessageHandler messageHandler;
 	
@@ -23,7 +19,7 @@ namespace Messaging {
 		bool getMessage(DestinationType dest);
 
 		//Note: function must be implemented by engine module dest.
-		//Also, function must delete args param, or memory leaks will occur
+		//Also, function must delete args param, or memory leaks will occur.
 		bool registerFunction(DestinationType dest, const std::string & message, FunctionType function); 
 
 	private:
